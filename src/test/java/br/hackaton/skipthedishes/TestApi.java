@@ -1,9 +1,14 @@
 package br.hackaton.skipthedishes;
 
+import java.sql.Connection;
+import java.sql.DriverManager;
+import java.sql.PreparedStatement;
+import java.sql.SQLException;
 import java.util.ArrayList;
 import java.util.List;
 
 import org.junit.Assert;
+import org.junit.BeforeClass;
 import org.junit.FixMethodOrder;
 import org.junit.Test;
 import org.junit.runner.RunWith;
@@ -22,7 +27,7 @@ import br.hackathon.skipthedishes.utils.Encryption;
 @RunWith(SpringRunner.class)
 @SpringBootTest(classes = UsersController.class, webEnvironment = SpringBootTest.WebEnvironment.DEFINED_PORT)
 @FixMethodOrder(MethodSorters.NAME_ASCENDING)
-public class TestUser {
+public class TestApi {
 
 	public static final String USER_URL = "http://localhost:8080/user/";
 	public static final String PRODUCT_URL = "http://localhost:8080/product/";
@@ -31,6 +36,63 @@ public class TestUser {
 	
 	@Autowired
 	private TestRestTemplate restTemplate;
+	
+	
+	@BeforeClass
+	public static void buildDatabase() {
+		try {
+			Class.forName("org.h2.Driver");
+			Connection conn = DriverManager.getConnection("jdbc:h2:~/test", "sa", "");
+			
+			List<String> listQuery = new ArrayList<String>();
+			
+			listQuery.add("drop table users");
+			listQuery.add("CREATE TABLE users (\n" +
+			  " id_user INT PRIMARY KEY auto_increment,\n" +
+			  " name VARCHAR(45) NOT NULL,\n" +
+			  " login VARCHAR(45) NULL,\n" +
+			  " password VARCHAR(40) NULL,\n" +
+			  " PRIMARY KEY (id_user))");
+
+
+			listQuery.add("drop table products");
+			listQuery.add("CREATE TABLE products (" + 
+			    " id_product INT PRIMARY KEY auto_increment," + 
+			    " name VARCHAR(45) NOT NULL," + 
+			    " price DOUBLE NOT NULL," + 
+			    " availability INTEGER NOT NULL," + 
+			    " PRIMARY KEY (id_product))"); 
+
+
+			listQuery.add("drop table orders");
+			listQuery.add("CREATE TABLE orders (" +
+			    " id_order INT PRIMARY KEY auto_increment," +
+			    " id_user INT NOT NULL," +
+			    " id_product INT NOT NULL," +
+			    " status VARCHAR(20) NOT NULL," +
+			    " quantity INT NOT NULL," +
+			    " PRIMARY KEY (id_order))");
+			
+			listQuery.forEach(query -> {
+				try {
+					PreparedStatement st = conn.prepareStatement(query);
+					st.executeUpdate();
+					st.close();
+				} catch (Exception e) {
+					// TODO Auto-generated catch block
+					e.printStackTrace();
+				}
+			});
+
+
+		} catch (ClassNotFoundException e) {
+			// TODO Auto-generated catch block
+			e.printStackTrace();
+		} catch (SQLException e) {
+			// TODO Auto-generated catch block
+			e.printStackTrace();
+		}
+	}
 
 	@Test
 	public void test11_cleanDatabaseAndCreateUser() {
